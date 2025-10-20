@@ -1,8 +1,13 @@
-// Models.swift
+//
+//  Models.swift
+//  MealCalendar
+//
+//  Created by Javi on 18/10/25.
+//
 import Foundation
 
 // Tipos de comidas
-enum MealType: String, CaseIterable {
+enum MealType: String, CaseIterable, Codable {
     case breakfast = "Desayuno"
     case lunch = "Almuerzo"
     case meal = "Comida"
@@ -20,14 +25,16 @@ enum MealType: String, CaseIterable {
     }
 }
 
+
 // Modelo para una comida
 struct Meal: Identifiable, Codable {
-    let id = UUID()
+    var id: UUID = UUID()   // ← ahora es 'var' y decodable correctamente
     var name: String
     var type: MealType
     var date: Date
     var notes: String = ""
 }
+
 
 // Modelo para un día
 struct Day: Identifiable {
