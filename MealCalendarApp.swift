@@ -1,39 +1,36 @@
 //
-//  MealCalendarApp.swift
-//  MealCalendar
+// MealCalendarApp.swift
+// MealCalendar
 //
-//  Created by Javi on 18/10/25.
+// App principal con tabs: Comidas / Deporte / Resumen
 //
+
 import SwiftUI
+import CoreData
 
 @main
 struct MealCalendarApp: App {
-    // 🔁 Crear una sola instancia de cada ViewModel
-    @StateObject private var mealViewModel = CalendarViewModel()
-    @StateObject private var workoutViewModel = WorkoutCalendarViewModel()
-    
+    // Core Data stack
+    let persistenceController = PersistenceController.shared
+
+    // Crear viewModels con el context compartido
+    @StateObject private var mealViewModel = CalendarViewModel(context: PersistenceController.shared.container.viewContext)
+    @StateObject private var workoutViewModel = WorkoutCalendarViewModel(context: PersistenceController.shared.container.viewContext)
+
     var body: some Scene {
         WindowGroup {
             TabView {
                 MealCalendarView(viewModel: mealViewModel)
-                    .tabItem {
-                        Label("Comidas", systemImage: "fork.knife")
-                    }
-                
+                    .tabItem { Label("Comidas", systemImage: "fork.knife") }
+
                 WorkoutCalendarView(viewModel: workoutViewModel)
-                    .tabItem {
-                        Label("Deporte", systemImage: "figure.run")
-                    }
-                
-                WeekSummaryView(
-                    mealViewModel: mealViewModel,
-                    workoutViewModel: workoutViewModel
-                )
-                .tabItem {
-                    Label("Resumen", systemImage: "calendar")
-                }
+                    .tabItem { Label("Deporte", systemImage: "figure.run") }
+
+                WeekSummaryView(mealViewModel: mealViewModel, workoutViewModel: workoutViewModel)
+                    .tabItem { Label("Resumen", systemImage: "calendar") }
             }
+            // también inyectamos el managedObjectContext globalmente por si alguna vista lo quiere usar directamente con @Environment
+            .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }
-

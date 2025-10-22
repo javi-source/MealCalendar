@@ -1,12 +1,13 @@
 //
-//  Models.swift
-//  MealCalendar
+// Models.swift
+// MealCalendar
 //
-//  Created by Javi on 18/10/25.
+// Modelos y extensiones comunes
 //
+
 import Foundation
 
-// Tipos de comidas
+// MARK: - Tipos de comida (con icono)
 enum MealType: String, CaseIterable, Codable {
     case breakfast = "Desayuno"
     case lunch = "Almuerzo"
@@ -25,67 +26,113 @@ enum MealType: String, CaseIterable, Codable {
     }
 }
 
-
-// Modelo para una comida
-struct Meal: Identifiable, Codable {
-    var id: UUID = UUID()   // ← ahora es 'var' y decodable correctamente
+// Modelo para una comida.
+// Incluyo un initializer para poder crear con id existente (útil al editar).
+struct Meal: Identifiable, Codable, Equatable {
+    var id: UUID
     var name: String
     var type: MealType
     var date: Date
-    var notes: String = ""
+    var notes: String
+    
+    init(id: UUID = UUID(), name: String, type: MealType, date: Date, notes: String = "") {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.date = date
+        self.notes = notes
+    }
 }
 
+// Tipos de entrenamiento (con icono)
+enum WorkoutType: String, CaseIterable, Codable {
+    case running = "Correr"
+    case walking = "Caminar"
+    case cycling = "Ciclismo"
+    case gym = "Gimnasio"
+    case yoga = "Yoga"
+    case swimming = "Natación"
+    case other = "Otro"
+    
+    var icon: String {
+        switch self {
+        case .running: return "🏃‍♀️"
+        case .walking: return "🚶‍♀️"
+        case .cycling: return "🚴‍♀️"
+        case .gym: return "🏋️‍♂️"
+        case .yoga: return "🧘‍♀️"
+        case .swimming: return "🏊‍♀️"
+        case .other: return "⚡️"
+        }
+    }
+}
 
-// Modelo para un día
+// Modelo para un entrenamiento
+struct Workout: Identifiable, Codable, Equatable {
+    var id: UUID
+    var type: WorkoutType
+    var date: Date
+    var distance: Double? // km
+    var duration: Double? // minutos
+    var notes: String
+    
+    init(id: UUID = UUID(), type: WorkoutType, date: Date, distance: Double? = nil, duration: Double? = nil, notes: String = "") {
+        self.id = id
+        self.type = type
+        self.date = date
+        self.distance = distance
+        self.duration = duration
+        self.notes = notes
+    }
+}
+
+// Día y semana — estructuras para generar la semana
 struct Day: Identifiable {
     let id = UUID()
     let date: Date
-    var meals: [MealType: Meal] = [:]
 }
 
-// Modelo para una semana
 struct Week {
     let startDate: Date
-    var days: [Day] = []
-    
-    init(startDate: Date) {
-        self.startDate = startDate
-        self.days = Week.generateDays(for: startDate)
-    }
-    
-    private static func generateDays(for startDate: Date) -> [Day] {
-        var days: [Day] = []
-        let calendar = Calendar.current
-        
-        for i in 0..<7 {
-            if let date = calendar.date(byAdding: .day, value: i, to: startDate) {
-                days.append(Day(date: date))
-            }
+    var days: [Day] {
+        (0..<7).map { offset in
+            Day(date: Calendar.current.date(byAdding: .day, value: offset, to: startDate)!)
         }
-        return days
     }
 }
 
+// MARK: - Extensiones de Date (utiles para formatear y claves)
 extension Date {
+    /// Inicio de la semana (según calendario actual)
     var startOfWeek: Date {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: self)
-        return calendar.date(from: components)!
+        Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: self))!
     }
     
+    /// Formato para mostrar el día numérico (ej. "20")
     func formattedDay() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d"
-        return formatter.string(from: self)
+        let df = DateFormatter()
+        df.dateFormat = "d"
+        return df.string(from: self)
     }
     
+    /// Formato abreviado de día de la semana (ej. "Lun")
     func formattedWeekday() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE"
-        return formatter.string(from: self).capitalized
+        let df = DateFormatter()
+        df.dateFormat = "EEE"
+        return df.string(from: self).capitalized
     }
     
+    /// Indica si la fecha es hoy
     func isToday() -> Bool {
-        return Calendar.current.isDateInToday(self)
+        Calendar.current.isDateInToday(self)
+    }
+    
+    /// Clave diaria "yyyy-MM-dd" para agrupar por día (usa zona local)
+    var startOfDayKey: String {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        // usamos zona local para que las agrupaciones sigan el día del usuario
+        df.timeZone = TimeZone.current
+        return df.string(from: self)
     }
 }
